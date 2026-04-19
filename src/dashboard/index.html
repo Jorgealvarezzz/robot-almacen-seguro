@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Robot de Almacén · Panel de Control</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --panel: #161b22;
+      --panel-2: #1c2028;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --accent: #f0c674;
+      --ok: #56d364;
+      --warn: #e3b341;
+      --err: #f85149;
+      --mono: 'JetBrains Mono', 'Courier New', monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--panel);
+    }
+    header h1 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+    header h1::before { content: "▸ "; color: var(--accent); }
+    .user-info { font-family: var(--mono); font-size: 0.85rem; color: var(--muted); }
+    .user-info .role { color: var(--accent); font-weight: 600; text-transform: uppercase; }
+    .user-info button {
+      margin-left: 1rem; background: transparent; border: 1px solid var(--border);
+      color: var(--muted); padding: 0.3rem 0.8rem; cursor: pointer;
+      font-family: var(--mono); font-size: 0.8rem;
+    }
+    .user-info button:hover { color: var(--err); border-color: var(--err); }
+
+    main { padding: 2rem; max-width: 1400px; margin: 0 auto; }
+
+    .login-wrapper {
+      min-height: calc(100vh - 64px); display: flex;
+      align-items: center; justify-content: center;
+    }
+    .login-box {
+      background: var(--panel); border: 1px solid var(--border);
+      padding: 2.5rem; width: 100%; max-width: 400px;
+    }
+    .login-box h2 {
+      font-family: var(--mono); font-size: 0.85rem; color: var(--accent);
+      letter-spacing: 2px; margin-bottom: 1.5rem; text-transform: uppercase;
+    }
+    .login-box label {
+      display: block; font-family: var(--mono); font-size: 0.75rem;
+      color: var(--muted); margin-bottom: 0.4rem;
+      text-transform: uppercase; letter-spacing: 1px;
+    }
+    .login-box input {
+      width: 100%; background: var(--bg); border: 1px solid var(--border);
+      color: var(--text); padding: 0.7rem; font-family: var(--mono);
+      margin-bottom: 1rem; font-size: 0.95rem;
+    }
+    .login-box input:focus { outline: none; border-color: var(--accent); }
+    .login-box button {
+      width: 100%; background: var(--accent); color: var(--bg);
+      border: none; padding: 0.8rem; font-family: var(--mono);
+      font-weight: 700; cursor: pointer; letter-spacing: 1px; font-size: 0.9rem;
+    }
+    .login-box button:hover { opacity: 0.9; }
+    .login-hint {
+      margin-top: 1.5rem; font-family: var(--mono); font-size: 0.75rem;
+      color: var(--muted); border-top: 1px solid var(--border); padding-top: 1rem;
+    }
+    .error-msg {
+      background: rgba(248, 81, 73, 0.1); border-left: 3px solid var(--err);
+      padding: 0.6rem; font-family: var(--mono); font-size: 0.8rem;
+      color: var(--err); margin-bottom: 1rem;
+    }
+
+    .grid {
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      gap: 1.5rem; margin-bottom: 1.5rem;
+    }
+    .card {
+      background: var(--panel); border: 1px solid var(--border); padding: 1.5rem;
+    }
+    .card-label {
+      font-family: var(--mono); font-size: 0.7rem; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.8rem;
+    }
+    .card-value { font-family: var(--mono); font-size: 2rem; font-weight: 700; }
+    .card-sub { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); margin-top: 0.3rem; }
+    .status-idle { color: var(--muted); }
+    .status-moving { color: var(--ok); }
+    .status-charging { color: var(--warn); }
+    .status-error { color: var(--err); }
+
+    .panel-wide {
+      background: var(--panel); border: 1px solid var(--border); margin-bottom: 1.5rem;
+    }
+    .panel-header {
+      padding: 1rem 1.5rem; border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .panel-header h3 {
+      font-family: var(--mono); font-size: 0.8rem; color: var(--accent);
+      letter-spacing: 2px; text-transform: uppercase;
+    }
+    .panel-body { padding: 1.5rem; }
+
+    table {
+      width: 100%; border-collapse: collapse;
+      font-family: var(--mono); font-size: 0.85rem;
+    }
+    th {
+      text-align: left; padding: 0.6rem 0.8rem; color: var(--muted);
+      font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px;
+      border-bottom: 1px solid var(--border);
+    }
+    td { padding: 0.6rem 0.8rem; border-bottom: 1px solid var(--panel-2); }
+    tr:hover { background: var(--panel-2); }
+
+    .map-container {
+      background: var(--bg); border: 1px dashed var(--border);
+      height: 300px; position: relative; overflow: hidden;
+    }
+    .grid-bg {
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 30px 30px; opacity: 0.3;
+    }
+    .robot-dot {
+      position: absolute; width: 16px; height: 16px;
+      background: var(--accent); border-radius: 50%;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 12px var(--accent);
+      transition: all 0.5s ease;
+    }
+    .robot-trail {
+      position: absolute; width: 4px; height: 4px;
+      background: var(--accent); border-radius: 50%;
+      transform: translate(-50%, -50%); opacity: 0.3;
+    }
+    .map-center-marker {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%); color: var(--muted);
+      font-family: var(--mono); font-size: 0.7rem; pointer-events: none;
+    }
+
+    .cmd-controls { display: flex; gap: 0.8rem; flex-wrap: wrap; }
+    .cmd-btn {
+      background: var(--panel-2); border: 1px solid var(--border);
+      color: var(--text); padding: 0.7rem 1.2rem; font-family: var(--mono);
+      cursor: pointer; letter-spacing: 1px; font-size: 0.85rem;
+      transition: all 0.15s;
+    }
+    .cmd-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .cmd-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .cmd-btn:disabled:hover { border-color: var(--border); color: var(--text); }
+    .cmd-warn {
+      font-family: var(--mono); font-size: 0.75rem;
+      color: var(--warn); margin-top: 0.8rem;
+    }
+    .toast {
+      position: fixed; bottom: 2rem; right: 2rem;
+      background: var(--panel); border-left: 3px solid var(--ok);
+      padding: 1rem 1.5rem; font-family: var(--mono); font-size: 0.85rem;
+      animation: slideIn 0.2s ease; z-index: 1000;
+    }
+    .toast.err { border-left-color: var(--err); color: var(--err); }
+    @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+
+    @media (max-width: 768px) {
+      .grid { grid-template-columns: 1fr; }
+      main { padding: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <script>
+    // Robot de Almacen Seguro - Dashboard
+    // JWT guardado en memoria (no localStorage) para reducir XSS
+
+    const API = '';
+    let token = null;
+    let currentUser = null;
+    let pollTimer = null;
+    let trailPoints = [];
+
+    const $app = document.getElementById('app');
+
+    function renderLogin(errorMsg) {
+      $app.innerHTML = `
+        <header>
+          <h1>Robot de Almacén · Plataforma Segura</h1>
+          <div class="user-info">v1.0.0</div>
+        </header>
+        <div class="login-wrapper">
+          <div class="login-box">
+            <h2>// Acceso autenticado</h2>
+            ${errorMsg ? `<div class="error-msg">${errorMsg}</div>` : ''}
+            <label>Usuario</label>
+            <input id="username" type="text" autocomplete="username" />
+            <label>Contraseña</label>
+            <input id="password" type="password" autocomplete="current-password" />
+            <button id="login-btn">AUTENTICAR</button>
+            <div class="login-hint">
+              Demo:<br>
+              admin / admin123<br>
+              operador / op123
+            </div>
+          </div>
+        </div>
+      `;
+      document.getElementById('login-btn').addEventListener('click', login);
+      document.getElementById('password').addEventListener('keypress', e => {
+        if (e.key === 'Enter') login();
+      });
+    }
+
+    async function login() {
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      if (!username || !password) {
+        renderLogin('Usuario y contraseña son obligatorios');
+        return;
+      }
+      try {
+        const res = await fetch(`${API}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          renderLogin(`401 · ${err.detail || 'Credenciales inválidas'}`);
+          return;
+        }
+        const data = await res.json();
+        token = data.access_token;
+        currentUser = { username, role: data.role };
+        renderDashboard();
+      } catch (e) {
+        renderLogin(`Error de red: ${e.message}`);
+      }
+    }
+
+    function logout() {
+      token = null;
+      currentUser = null;
+      if (pollTimer) clearInterval(pollTimer);
+      trailPoints = [];
+      renderLogin();
+    }
+
+    function renderDashboard() {
+      const isAdmin = currentUser.role === 'admin';
+      $app.innerHTML = `
+        <header>
+          <h1>Robot de Almacén · Plataforma Segura</h1>
+          <div class="user-info">
+            ${currentUser.username} · <span class="role">${currentUser.role}</span>
+            <button id="logout-btn">cerrar sesión</button>
+          </div>
+        </header>
+        <main>
+          <div class="grid">
+            <div class="card">
+              <div class="card-label">Estado</div>
+              <div class="card-value" id="kpi-status">--</div>
+              <div class="card-sub" id="kpi-robot">robot: --</div>
+            </div>
+            <div class="card">
+              <div class="card-label">Batería</div>
+              <div class="card-value" id="kpi-battery">--%</div>
+              <div class="card-sub" id="kpi-battery-sub">sin datos</div>
+            </div>
+            <div class="card">
+              <div class="card-label">Posición</div>
+              <div class="card-value" id="kpi-pos">(--, --)</div>
+              <div class="card-sub" id="kpi-ts">sin lectura</div>
+            </div>
+          </div>
+
+          <div class="panel-wide">
+            <div class="panel-header">
+              <h3>// Mapa de posición (rastro)</h3>
+              <div class="card-sub" style="margin:0">últimas 20 lecturas</div>
+            </div>
+            <div class="panel-body">
+              <div class="map-container" id="map">
+                <div class="grid-bg"></div>
+                <div class="map-center-marker">(0,0)</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel-wide">
+            <div class="panel-header"><h3>// Control remoto</h3></div>
+            <div class="panel-body">
+              <div class="cmd-controls">
+                <button class="cmd-btn" data-cmd="MOVE" ${isAdmin ? '' : 'disabled'}>▶ MOVE</button>
+                <button class="cmd-btn" data-cmd="STOP" ${isAdmin ? '' : 'disabled'}>■ STOP</button>
+                <button class="cmd-btn" data-cmd="CHARGE" ${isAdmin ? '' : 'disabled'}>⚡ CHARGE</button>
+              </div>
+              ${!isAdmin ? '<div class="cmd-warn">⚠ Requiere rol admin. Tu rol: ' + currentUser.role + '</div>' : ''}
+            </div>
+          </div>
+
+          <div class="panel-wide">
+            <div class="panel-header"><h3>// Eventos recientes</h3></div>
+            <div class="panel-body">
+              <table>
+                <thead><tr><th>Timestamp</th><th>Robot</th><th>Tipo</th></tr></thead>
+                <tbody id="eventos-body">
+                  <tr><td colspan="3" style="color:var(--muted)">cargando...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="panel-wide">
+            <div class="panel-header"><h3>// Comandos ejecutados (auditoría)</h3></div>
+            <div class="panel-body">
+              <table>
+                <thead><tr><th>Timestamp</th><th>Usuario</th><th>Robot</th><th>Comando</th></tr></thead>
+                <tbody id="comandos-body">
+                  <tr><td colspan="4" style="color:var(--muted)">cargando...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </main>
+      `;
+      document.getElementById('logout-btn').addEventListener('click', logout);
+      document.querySelectorAll('.cmd-btn').forEach(btn => {
+        btn.addEventListener('click', () => sendCommand(btn.dataset.cmd));
+      });
+      refreshAll();
+      pollTimer = setInterval(refreshAll, 3000);
+    }
+
+    async function apiGet(path) {
+      const res = await fetch(`${API}${path}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.status === 401) {
+        toast('Sesión expirada', true);
+        logout();
+        throw new Error('unauth');
+      }
+      if (!res.ok) throw new Error(`${res.status}`);
+      return await res.json();
+    }
+
+    async function refreshAll() {
+      try {
+        const [last, eventos, comandos] = await Promise.all([
+          apiGet('/api/telemetry/last').catch(() => null),
+          apiGet('/api/eventos?limit=10').catch(() => []),
+          apiGet('/api/comandos?limit=10').catch(() => [])
+        ]);
+        if (last) updateKpis(last);
+        updateEventos(eventos);
+        updateComandos(comandos);
+        if (last) updateMap(last);
+      } catch (e) { /* manejado */ }
+    }
+
+    function updateKpis(t) {
+      const s = document.getElementById('kpi-status');
+      s.textContent = t.status;
+      s.className = 'card-value status-' + t.status;
+      document.getElementById('kpi-robot').textContent = `robot: ${t.robot_id}`;
+      document.getElementById('kpi-battery').textContent = `${t.battery.toFixed(1)}%`;
+      document.getElementById('kpi-battery-sub').textContent =
+        t.battery < 20 ? '⚠ batería baja' : 'OK';
+      document.getElementById('kpi-pos').textContent = `(${t.x}, ${t.y})`;
+      const d = new Date(t.ts);
+      document.getElementById('kpi-ts').textContent = 'último: ' + d.toLocaleTimeString();
+    }
+
+    function updateEventos(rows) {
+      const tb = document.getElementById('eventos-body');
+      if (!rows.length) {
+        tb.innerHTML = '<tr><td colspan="3" style="color:var(--muted)">sin eventos</td></tr>';
+        return;
+      }
+      tb.innerHTML = rows.map(r => `
+        <tr>
+          <td>${new Date(r.ts).toLocaleTimeString()}</td>
+          <td>${r.robot_id}</td>
+          <td style="color:var(--accent)">${r.tipo}</td>
+        </tr>
+      `).join('');
+    }
+
+    function updateComandos(rows) {
+      const tb = document.getElementById('comandos-body');
+      if (!rows.length) {
+        tb.innerHTML = '<tr><td colspan="4" style="color:var(--muted)">sin comandos</td></tr>';
+        return;
+      }
+      tb.innerHTML = rows.map(r => `
+        <tr>
+          <td>${new Date(r.ts).toLocaleTimeString()}</td>
+          <td>${r.usuario}</td>
+          <td>${r.robot_id}</td>
+          <td style="color:var(--accent)">${r.cmd}</td>
+        </tr>
+      `).join('');
+    }
+
+    function updateMap(t) {
+      const map = document.getElementById('map');
+      if (!map) return;
+      trailPoints.push({ x: t.x, y: t.y });
+      if (trailPoints.length > 20) trailPoints.shift();
+
+      const w = map.clientWidth;
+      const h = map.clientHeight;
+      const scale = 10;
+      const cx = w / 2;
+      const cy = h / 2;
+
+      map.querySelectorAll('.robot-dot, .robot-trail').forEach(el => el.remove());
+
+      trailPoints.forEach((p, i) => {
+        const el = document.createElement('div');
+        el.className = i === trailPoints.length - 1 ? 'robot-dot' : 'robot-trail';
+        el.style.left = (cx + p.x * scale) + 'px';
+        el.style.top = (cy - p.y * scale) + 'px';
+        map.appendChild(el);
+      });
+    }
+
+    async function sendCommand(cmd) {
+      try {
+        const res = await fetch(`${API}/api/comandos`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ robot_id: 'rb-01', cmd })
+        });
+        if (res.status === 403) {
+          toast(`403 Forbidden — rol insuficiente`, true);
+          return;
+        }
+        if (!res.ok) {
+          toast(`Error ${res.status}`, true);
+          return;
+        }
+        toast(`✓ Comando ${cmd} enviado`);
+        refreshAll();
+      } catch (e) {
+        toast(`Error: ${e.message}`, true);
+      }
+    }
+
+    function toast(msg, isErr) {
+      const t = document.createElement('div');
+      t.className = 'toast' + (isErr ? ' err' : '');
+      t.textContent = msg;
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 3000);
+    }
+
+    renderLogin();
+  </script>
+</body>
+</html>
