@@ -1,0 +1,74 @@
+services:
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: mosquitto
+    restart: unless-stopped
+    ports:
+      - "8883:8883"
+    volumes:
+      - ./config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./config/passwd:/mosquitto/config/passwd:ro
+      - ./src/gateway/certs/ca.crt:/mosquitto/certs/ca.crt:ro
+      - ./src/gateway/certs/mosquitto.crt:/mosquitto/certs/mosquitto.crt:ro
+      - ./src/gateway/certs/mosquitto.key:/mosquitto/certs/mosquitto.key:ro
+      - mosquitto-data:/mosquitto/data
+    networks:
+      - backend-net
+
+  backend:
+    build: ./src/backend
+    container_name: backend
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - CA_CERT=/certs/ca.crt
+    volumes:
+      - backend-data:/data
+      - ./src/gateway/certs/ca.crt:/certs/ca.crt:ro
+    networks:
+      - backend-net
+      - gateway-net
+    depends_on:
+      - mosquitto
+
+  edge:
+    build: ./src/edge
+    container_name: edge
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - ROBOT_ID=rb-01
+      - CA_CERT=/certs/ca.crt
+    volumes:
+      - ./src/gateway/certs/ca.crt:/certs/ca.crt:ro
+    networks:
+      - backend-net
+    depends_on:
+      - mosquitto
+
+  gateway:
+    image: nginx:1.27-alpine
+    container_name: gateway
+    restart: unless-stopped
+    ports:
+      - "8443:443"
+    volumes:
+      - ./src/gateway/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./src/gateway/certs/gateway.crt:/etc/nginx/certs/gateway.crt:ro
+      - ./src/gateway/certs/gateway.key:/etc/nginx/certs/gateway.key:ro
+      - ./src/dashboard:/usr/share/nginx/html:ro
+    networks:
+      - gateway-net
+    depends_on:
+      - backend
+
+networks:
+  backend-net:
+    driver: bridge
+  gateway-net:
+    driver: bridge
+
+volumes:
+  mosquitto-data:
+  backend-data:
