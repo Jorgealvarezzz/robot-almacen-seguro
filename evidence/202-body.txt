@@ -1,0 +1,1 @@
+{"id":2,"robot_id":"rb-01","ts":"2026-04-19T02:21:47.977561","cmd":"MOVE","usuario":"admin"}

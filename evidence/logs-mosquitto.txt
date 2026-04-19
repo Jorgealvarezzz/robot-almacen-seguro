@@ -1,0 +1,20 @@
+﻿mosquitto  | 1776564652: TLS support available.
+mosquitto  | 1776564652: TLS-PSK support available.
+mosquitto  | 1776564652: Websockets support available.
+mosquitto  | 1776564652: Warning: File /mosquitto/config/passwd has world readable permissions. Future versions will refuse to load this file.
+mosquitto  | To fix this, use `chmod 0700 /mosquitto/config/passwd`.
+mosquitto  | 
+mosquitto  | 1776564652: Warning: File /mosquitto/config/passwd owner is not mosquitto. Future versions will refuse to load this file.To fix this, use `chown mosquitto /mosquitto/config/passwd`.
+mosquitto  | 
+mosquitto  | 1776564652: Warning: File /mosquitto/config/passwd group is not mosquitto. Future versions will refuse to load this file.
+mosquitto  | 
+mosquitto  | 1776564652: Plugin builtin-security has registered to receive 'basic-auth' events.
+mosquitto  | 1776564652: Opening ipv4 listen socket on port 8883.
+mosquitto  | 1776564652: Opening ipv6 listen socket on port 8883.
+mosquitto  | 1776564652: mosquitto version 2.1.2 running
+mosquitto  | 1776564652: New connection from 172.19.0.3:38663 on port 8883.
+mosquitto  | 1776564652: New client connected from 172.19.0.3:38663 as edge-rb-01 (p5, c1, k30, u'robot').
+mosquitto  | 1776564652: Client edge-rb-01 negotiated TLSv1.3 cipher TLS_AES_256_GCM_SHA384
+mosquitto  | 1776564653: New connection from 172.19.0.4:38899 on port 8883.
+mosquitto  | 1776564653: New client connected from 172.19.0.4:38899 as backend-subscriber (p5, c1, k30, u'robot').
+mosquitto  | 1776564653: Client backend-subscriber negotiated TLSv1.3 cipher TLS_AES_256_GCM_SHA384
